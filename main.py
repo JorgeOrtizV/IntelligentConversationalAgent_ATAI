@@ -1,5 +1,6 @@
 from speakeasypy import Speakeasy, Chatroom
 import time
+from rdflib import Graph
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
 listen_freq = 2
@@ -10,6 +11,8 @@ class Agent:
         # Initialize the Speakeasy Python framework and login
         self.speakeasy = Speakeasy(host=DEFAULT_HOST_URL, username=username, password=password)
         self.speakeasy.login()
+        # Load KG
+        self.graph = KG()
     
     def listen(self):
         while True:
@@ -21,6 +24,14 @@ class Agent:
 
                 for message in room.get_messages(only_partner=True, only_new=True):
                     print("Chatroom: {}; Message: {} - {}; Time: {}".format(room.room_id, message.ordinal, message.message, self.get_time()))
+                    #import pdb; pdb.set_trace()
+                    # TODO: Improve this conditional, make it robuster
+                    if 'SELECT' in message.message: # Naive way of making sure it is a request
+                        self.graph.search(message.message)
+                        print("\n============QUERY RESULTS===============\n")
+                        for element in self.graph.response:
+                            print(element[0][0:])
+
 
                     room.post_messages("Received your message: {}".format(message.message))
                     room.mark_as_processed(message)
@@ -42,6 +53,18 @@ class Agent:
     @staticmethod
     def get_time():
         return time.strftime("%H:%M:%S, %d-%m-%Y", time.localtime())
+    
+
+class KG:
+    def __init__(self, graph_dir='14_graph.nt'):
+        self.graph = Graph()
+        # load a graph
+        self.graph.parse(source='data/'+graph_dir, format='turtle')
+        self.response = ''
+
+    def search(self, query):
+        self.response=self.graph.query(query)
+
 
 
 
