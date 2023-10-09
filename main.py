@@ -28,16 +28,16 @@ class Agent:
                         message.message = message.message.replace('\n', ' ')
                         message.message = re.sub(' +', ' ', message.message)
                         print("Chatroom: {}; Message: {} - {}; Time: {}".format(room.room_id, message.ordinal, repr(message.message), self.get_time()))
+                        room.post_messages("Received your message: {}".format(message.message))
                         #import pdb; pdb.set_trace()
                         # TODO: Improve this conditional, make it robuster
                         if 'SELECT' in message.message: # Naive way of making sure it is a request
                             self.graph.search(message.message)
-                            print("\n============QUERY RESULTS===============\n")
-                            for element in self.graph.response:
-                                room.post_messages('The answer to your query is: {}'.format(element[0][0:]))
+                            print("\n============ QUERY RESULTS OBTAINED ===============\n")
+                            room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
+                            for index, element in enumerate(self.graph.response):
+                                room.post_messages('Matched element {}: {}'.format(index+1, element[0][0:]))
 
-
-                        room.post_messages("Received your message: {}".format(message.message))
                         room.mark_as_processed(message)
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
