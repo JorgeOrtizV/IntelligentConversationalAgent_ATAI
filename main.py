@@ -36,7 +36,7 @@ class Agent:
                             print("\n============ QUERY RESULTS OBTAINED ===============\n")
                             room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
                             for index, element in enumerate(self.graph.response):
-                                room.post_messages('Matched element {}: {}'.format(index+1, element[0][0:]))
+                                room.post_messages('Matched element {}: {}'.format(index+1, element[0][0:].encode('utf-8').decode('utf-8')))
 
                         room.mark_as_processed(message)
                     except Exception as error:
