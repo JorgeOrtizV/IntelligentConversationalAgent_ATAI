@@ -1,5 +1,6 @@
 from speakeasypy import Speakeasy, Chatroom
 import time
+import re
 from rdflib import Graph
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
@@ -23,18 +24,24 @@ class Agent:
                     room.initiated = True
 
                 for message in room.get_messages(only_partner=True, only_new=True):
-                    print("Chatroom: {}; Message: {} - {}; Time: {}".format(room.room_id, message.ordinal, message.message, self.get_time()))
-                    #import pdb; pdb.set_trace()
-                    # TODO: Improve this conditional, make it robuster
-                    if 'SELECT' in message.message: # Naive way of making sure it is a request
-                        self.graph.search(message.message)
-                        print("\n============QUERY RESULTS===============\n")
-                        for element in self.graph.response:
-                            print(element[0][0:])
+                    try:
+                        message.message = message.message.replace('\n', ' ')
+                        message.message = re.sub(' +', ' ', message.message)
+                        print("Chatroom: {}; Message: {} - {}; Time: {}".format(room.room_id, message.ordinal, repr(message.message), self.get_time()))
+                        #import pdb; pdb.set_trace()
+                        # TODO: Improve this conditional, make it robuster
+                        if 'SELECT' in message.message: # Naive way of making sure it is a request
+                            self.graph.search(message.message)
+                            print("\n============QUERY RESULTS===============\n")
+                            for element in self.graph.response:
+                                room.post_messages('The answer to your query is: {}'.format(element[0][0:]))
 
 
-                    room.post_messages("Received your message: {}".format(message.message))
-                    room.mark_as_processed(message)
+                        room.post_messages("Received your message: {}".format(message.message))
+                        room.mark_as_processed(message)
+                    except Exception as error:
+                        print("Problems parsing this message {}".format(message.message))
+                        print('Obtained following exception: {}'.format(error))
 
                 for reaction in room.get_reactions(only_new=True):
                     print(
@@ -59,7 +66,9 @@ class KG:
     def __init__(self, graph_dir='14_graph.nt'):
         self.graph = Graph()
         # load a graph
+        print("Loading graph ...")
         self.graph.parse(source='data/'+graph_dir, format='turtle')
+        print("Graph loaded!")
         self.response = ''
 
     def search(self, query):
