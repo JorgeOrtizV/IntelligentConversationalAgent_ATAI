@@ -2,6 +2,7 @@ from speakeasypy import Speakeasy, Chatroom
 import time
 import re
 from rdflib import Graph
+from html import escape, unescape
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
 listen_freq = 2
@@ -35,19 +36,20 @@ class Agent:
                             self.graph.search(message.message)
                             print("\n============ QUERY RESULTS OBTAINED ===============\n")
                             room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
-                            print(self.graph.response)
+                            #print(self.graph.response)
                             response_message = ""
                             for index, element in enumerate(self.graph.response):
                                 text = element[0]
                                 response_message += f"{index+1}: {text} <br>"
-                            print(response_message)
-                            room.post_messages(f"{response_message}")
+                            #print(response_message)
+                            room.post_messages(f"<Query results> <br>{response_message}")
                         else:
-                            room.post_messages("Please enter a SparQL query")
+                            room.post_messages("Please enter a SparQL query")                            
                         room.mark_as_processed(message)
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
                         print('Obtained following exception: {}'.format(error))
+                        room.post_messages(f"Failed to execute SparQL query, obtained the following exception: {error}")
                         room.mark_as_processed(message)
 
                 for reaction in room.get_reactions(only_new=True):
