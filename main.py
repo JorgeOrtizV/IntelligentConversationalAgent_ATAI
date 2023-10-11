@@ -28,20 +28,27 @@ class Agent:
                         message.message = message.message.replace('\n', ' ')
                         message.message = re.sub(' +', ' ', message.message)
                         print("Chatroom: {}; Message: {} - {}; Time: {}".format(room.room_id, message.ordinal, repr(message.message), self.get_time()))
-                        room.post_messages("Received your message: {}".format(message.message))
+                        #room.post_messages("Received your message: {}".format(message.message))
                         #import pdb; pdb.set_trace()
                         # TODO: Improve this conditional, make it robuster
                         if 'SELECT' in message.message: # Naive way of making sure it is a request
                             self.graph.search(message.message)
                             print("\n============ QUERY RESULTS OBTAINED ===============\n")
                             room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
+                            print(self.graph.response)
+                            response_message = ""
                             for index, element in enumerate(self.graph.response):
-                                room.post_messages('Matched element {}: {}'.format(index+1, element[0][0:].encode('utf-8').decode('utf-8')))
-
+                                text = element[0]
+                                response_message += f"{index+1}: {text} <br>"
+                            print(response_message)
+                            room.post_messages(f"{response_message}")
+                        else:
+                            room.post_messages("Please enter a SparQL query")
                         room.mark_as_processed(message)
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
                         print('Obtained following exception: {}'.format(error))
+                        room.mark_as_processed(message)
 
                 for reaction in room.get_reactions(only_new=True):
                     print(
