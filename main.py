@@ -3,6 +3,9 @@ import time
 import re
 from rdflib import Graph
 from html import escape, unescape
+import json
+
+from model import inference
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
 listen_freq = 2
@@ -32,19 +35,18 @@ class Agent:
                         #room.post_messages("Received your message: {}".format(message.message))
                         #import pdb; pdb.set_trace()
                         # TODO: Improve this conditional, make it robuster
-                        if 'SELECT' in message.message: # Naive way of making sure it is a request
-                            self.graph.search(message.message)
-                            print("\n============ QUERY RESULTS OBTAINED ===============\n")
-                            room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
-                            #print(self.graph.response)
-                            response_message = ""
-                            for index, element in enumerate(self.graph.response):
-                                text = element[0]
-                                response_message += f"{index+1}: {text} <br>"
-                            #print(response_message)
-                            room.post_messages(f"<Query results> <br>{response_message}")
-                        else:
-                            room.post_messages("Please enter a SparQL query")                            
+                        query = inference(message.message)
+                        self.graph.search(query)
+
+                        print("\n============ QUERY RESULTS OBTAINED ===============\n")
+                        room.post_messages("Obtained {} results for you query:".format(len(self.graph.response)))
+                        #print(self.graph.response)
+                        response_message = ""
+                        for index, element in enumerate(self.graph.response):
+                            text = element[0]
+                            response_message += f"{index+1}: {text} \n"
+                        #print(response_message)
+                        room.post_messages(f"The answer to your question is :\n {response_message}")                       
                         room.mark_as_processed(message)
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
@@ -87,5 +89,18 @@ class KG:
 
 
 if __name__ == "__main__":
-    agent = Agent('char-allegro-wok_bot', 'qdoPCWJbUaH9Vw')
-    agent.listen()
+    try:
+        with open("./credentials.json") as f:
+            data = json.load(f)
+            username = data["username"]
+            password = data["password"]
+    except Exception as e:
+        print(f"Encountered exception while reading credentials: {e}")
+
+    while(True):
+        try:
+            agent = Agent(username, password)
+            agent.listen()
+        except Exception as e:
+            print(f"Encountered exception while creating agent: {e}")
+            #Maybe add timeout of 5 seconds
