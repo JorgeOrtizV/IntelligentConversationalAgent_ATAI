@@ -34,11 +34,27 @@ query_list = ['SELECT ?y WHERE { <movie_name> <action/role> ?x . ?x rdfs:label ?
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}',
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie <action> <name> . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}']
 
-node_dict_map = {
-    "<movie_name>":movie_dict,
-    "<role>":roles_dict,
-    "<action>":actions_dict,
-    "<genre>":genre_dict,
-    "<name>":name_dict,
-    "<order>":order_dict,
-                }
+
+query_spo = [
+    ("<movie_name>","<action/role>",""),
+    ("","<action/role>","<name>"),
+    ("<movie_name>","http://www.wikidata.org/prop/direct/P577",""),
+    ("<movie_name>","http://www.wikidata.org/prop/direct/P136",""),
+    ("","",""),
+    ("","",""),
+    ("","",""),
+]
+
+human_like_answers = ["Well, the thing you're wondering about is actually <answer>.",
+                     "I think the answer is <answer>",
+                     "As far as I know, it's <answer>",
+                     "The answer to your question is <answer>",
+                     "According to my knowledge, it's <answer>",
+                     "Here's the answer to your question: <answer>"
+                     ]
+
+human_like_answers_embeddings = ["The answer according to my embeddings: <answer>",
+                                 "From my embeddings, I think its <answer>",
+                                 "According to my calculations, I believe it's <answer>",
+                                 "Let me just check my embeddings, yup it's <answer>",                                 
+                                 ]
