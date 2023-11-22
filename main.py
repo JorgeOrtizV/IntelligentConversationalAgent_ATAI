@@ -3,7 +3,6 @@ import time
 import re
 import rdflib
 from rdflib import Graph
-from html import escape, unescape
 import json
 import csv
 import numpy as np
@@ -35,6 +34,7 @@ class Agent:
     
     def listen(self):
         while True:
+            # TODO: ADD TRY BLOCK HERE TO RETRY ON CRASH
             rooms: list[Chatroom] = self.speakeasy.get_rooms(active=True)
             for room in rooms:
                 if not room.initiated:
@@ -55,8 +55,9 @@ class Agent:
                         if(query_type=="REC"):
 
                             #Obtain the movienames from the entities and find 10 simliar movies using entity_similarity()
-                            movie_names = inference_res["entity_list"]
-                            recommendations = self.entity_similarity(movie_names,movie_dict)
+                            entity_names = inference_res["entity_list"]
+                            print(entity_names)
+                            recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict)
 
                             # Add to final message response
                             final_response = "Here are some recommendations: "
@@ -144,10 +145,10 @@ class KG:
         print("Embeddings loaded!")
 
         # load the dictionaries
-        with open('./entity_ids.del', 'r') as ifile:
+        with open('./data/entity_ids.del', 'r') as ifile:
             self.ent2id = {rdflib.term.URIRef(ent): int(idx) for idx, ent in csv.reader(ifile, delimiter='\t')}
             self.id2ent = {v: k for k, v in self.ent2id.items()}
-        with open('./relation_ids.del', 'r') as ifile:
+        with open('./data/relation_ids.del', 'r') as ifile:
             self.rel2id = {rdflib.term.URIRef(rel): int(idx) for idx, rel in csv.reader(ifile, delimiter='\t')}
             self.id2rel = {v: k for k, v in self.rel2id.items()}
 
@@ -178,7 +179,7 @@ class KG:
 
         return res[:top_n]
     
-    def entity_similarity(entity_list,entity_dict):
+    def entity_similarity(self,entity_list,entity_dict):
         dist_all = []
         for entity in entity_list:
             entity_uri = match_entity(entity,entity_dict)
@@ -199,7 +200,7 @@ class KG:
         op = pd.DataFrame([
             (
                 self.id2ent[idx][len(WD):], # qid
-                self.ent2lbl[id2ent[idx]],  # label
+                self.ent2lbl[self.id2ent[idx]],  # label
                 total_dist[idx],             # score
                 rank+1,                # rank
             )
