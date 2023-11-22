@@ -17,7 +17,7 @@ name_dict = dict(zip(name_df.name,name_df.uri))
 
 
 node_dict_map = {
-    "<movie_name>":movie_dict,
+    "<movie>":movie_dict,
     "<role>":roles_dict,
     "<action>":actions_dict,
     "<genre>":genre_dict,
@@ -28,7 +28,7 @@ node_dict_map = {
 
 #Load the trained models for NER and text-classification
 
-nlp_NER = spacy.load("./models/NER/")
+nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
 
 nlp_textcat = spacy.load("./models/textcat/")
@@ -73,13 +73,15 @@ def inference(input_chat_text):
     ner_res = NER_inference(input_chat_text)
     label = textcat_inference(ner_res["text"])
 
+    print("LABEL: ",label)
+
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label==9):
+    if(label=="10"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []
         for entity,ent_type in ner_res["entities"].items():
-            if(ent_type == "<name>" or ent_type == "<movie_name>"):
+            if(ent_type == "<name>" or ent_type == "<movie>"):
                 ent_list.append(entity)
 
         return {"query_type": query_type,"entity_list":ent_list}
