@@ -57,7 +57,7 @@ class Agent:
 
                             #Obtain the movienames from the entities and find 10 simliar movies using entity_similarity()
                             entity_names = inference_res["entity_list"]
-                            print(entity_names)
+                            print("ENTITIES: ",entity_names)
                             recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict)
 
                             # Add to final message response
@@ -185,6 +185,7 @@ class KG:
         dist_all = []
         for entity in entity_list:
             entity_uri = match_entity(entity,entity_dict)
+            print(entity_uri)
             ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
             # we compare the embedding of the query entity to all other entity embeddings
             dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
@@ -199,16 +200,17 @@ class KG:
         # order by plausibility
         most_likely = total_dist.argsort()
 
-        op = pd.DataFrame([
-            (
-                self.id2ent[idx][len(WD):], # qid
-                self.ent2lbl[self.id2ent[idx]],  # label
-                total_dist[idx],             # score
-                rank+1,                # rank
-            )
-            for rank, idx in enumerate(most_likely[:10])],
-            columns=('Entity', 'Label', 'Score', 'Rank'))
-        return op["Label"]
+        labels = []
+        count = 0
+        for idx in most_likely:
+            try:
+                labels.append(self.ent2lbl[self.id2ent[idx]])
+                count+=1
+            except:
+                count-=1
+            if(count==10):
+                break
+        return labels
     
 
             

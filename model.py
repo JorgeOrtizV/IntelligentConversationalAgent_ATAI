@@ -43,10 +43,10 @@ def match_entity(entity,entity_dict):
         for key,val in entity_dict.items():
             if(entity.lower()==key.lower() and result==None):
                 result=val
-                print("exact match")
+                print(f"exact match: {(key,val)}")
             elif(entity.lower() in key.lower() and substr_result==None):
                 substr_result = val
-                print("substring match")
+                print(f"substring match: {(key,val)}")
     
         if(result!=None):
             return result
@@ -127,6 +127,9 @@ def inference(input_chat_text):
         for entity,ent_type in ner_res["entities"].items():
             if(ent_type == "<name>" or ent_type == "<movie>"):
                 ent_list.append(entity)
+                print(entity)
+            else:
+                print(ent_type)
 
         return {"query_type": query_type,"entity_list":ent_list}
 
