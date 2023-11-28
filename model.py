@@ -3,7 +3,7 @@ import numpy as np
 from rapidfuzz import process,fuzz
 import pandas as pd
 
-from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo
+from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo, predicates_dict
 
 #Load the data
 
@@ -71,12 +71,35 @@ def textcat_inference(text):
 def inference(input_chat_text):
 
     ner_res = NER_inference(input_chat_text)
+    #print(ner_res)
     label = textcat_inference(ner_res["text"])
 
     print("LABEL: ",label)
+    detected_predicates = {k for k, v in ner_res["entities"].items() if v=='<predicate>'}
 
+    # texcat override based on NER
+    if 'recommend' in detected_predicates or 'suggest' in detected_predicates:
+        label == 11
+    # TODO: Analyze if it is safe to override label here. I am not sure, so let's stick with text cat as per now.
+    elif len(detected_predicates) >= 1:
+        for pred in detected_predicates:
+            if pred in ['release', 'when', 'date', 'year']:
+                if label != 2: # Check that this is for the year questions
+                    print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(2, label))
+                else:
+                    print('NER and textcat agreement')
+            elif pred in ['genre', 'type', 'category']:
+                if label != 3: # Check that this is for the year questions
+                    print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
+                else:
+                    print('NER and textcat agreement')
+            elif pred in ['rated', 'rating', 'review', 'score']:
+                if label != 4: # Check that this is for the year questions
+                    print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
+                else:
+                    print('NER and textcat agreement')
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label=="10"):
+    if(label=="11"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []
