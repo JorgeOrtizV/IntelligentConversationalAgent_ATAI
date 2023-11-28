@@ -92,15 +92,16 @@ def textcat_inference(text):
 def inference(input_chat_text):
 
     ner_res = NER_inference(input_chat_text)
-    #print(ner_res)
+    print(ner_res)
     label = textcat_inference(ner_res["text"])
 
     print("LABEL: ",label)
-    detected_predicates = {k for k, v in ner_res["entities"].items() if v=='<predicate>'}
-
+    detected_predicates = [k for k, v in ner_res["entities"].items() if v=='<predicate>']
+    #import pdb;pdb.set_trace()
     # texcat override based on NER
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates:
-        label == "9"
+        label = "9"
+        print('label is now 9 - NER override')
     # TODO: Analyze if it is safe to override label here. I am not sure, so let's stick with text cat as per now.
     elif len(detected_predicates) >= 1:
         for pred in detected_predicates:
