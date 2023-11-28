@@ -5,6 +5,7 @@ import rdflib
 from rdflib import Graph
 import json
 import csv
+import traceback
 import numpy as np
 import pandas as pd
 from sklearn.metrics import pairwise_distances
@@ -110,6 +111,7 @@ class Agent:
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
                         print('Obtained following exception: {}'.format(error))
+                        print("Traceback: \n.\n.\n{}".format(traceback.format_exc()))
                         room.post_messages(f"Uh oh, I seem to have encountered an error! Could you please try again or rephrase your question?")
                         room.mark_as_processed(message)
 

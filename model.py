@@ -37,6 +37,27 @@ nlp_textcat = spacy.load("./models/textcat/")
 #Function to match entity to entities in KG using fuzzy string similarity 
 def match_entity(entity,entity_dict):
     
+    result = None
+    substr_result = None
+    try:
+        for key,val in entity_dict.items():
+            if(entity.lower()==key.lower() and result==None):
+                result=val
+                print("exact match")
+            elif(entity.lower() in key.lower() and substr_result==None):
+                substr_result = val
+                print("substring match")
+    
+        if(result!=None):
+            return result
+        if(substr_result!=None):
+            return substr_result
+    except Exception as e:
+        print("Exception in entity matching module: {}".format(e))
+    
+    print("fuzzy match")
+            
+    
     fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
     print(fuzz_match)
     return entity_dict[fuzz_match[0][0]]
@@ -79,27 +100,27 @@ def inference(input_chat_text):
 
     # texcat override based on NER
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates:
-        label == 11
+        label == "9"
     # TODO: Analyze if it is safe to override label here. I am not sure, so let's stick with text cat as per now.
     elif len(detected_predicates) >= 1:
         for pred in detected_predicates:
             if pred in ['release', 'when', 'date', 'year']:
-                if label != 2: # Check that this is for the year questions
+                if label != "2": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(2, label))
                 else:
                     print('NER and textcat agreement')
             elif pred in ['genre', 'type', 'category']:
-                if label != 3: # Check that this is for the year questions
+                if label != "3": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
                 else:
                     print('NER and textcat agreement')
             elif pred in ['rated', 'rating', 'review', 'score']:
-                if label != 4: # Check that this is for the year questions
+                if label != "4": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
                 else:
                     print('NER and textcat agreement')
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label=="11"):
+    if(label=="9"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []

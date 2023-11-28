@@ -86,15 +86,17 @@ query_list = ['SELECT ?y WHERE { <movie> <action/role> ?x . ?x rdfs:label ?y}',
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie <action> <name> . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}',
  'SELECT ?lbl  WHERE { <movie> wdt:P31 wd:Q11424 . ?movie wdt:P577 ?release_date ?movie rdfs:label ?lbl .FILTER regex(str(?release_date), "<year>") .}',
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie <action> <name> . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}',
- 'ASK {<name> <action> <movie> . <movie> wdt:P577 ?release_date .<movie> wdt:P136 <genre> FILTER regex(str(?release_date), "<year>") . }',
-]
-
+ #'ASK {<name> <action> <movie> . <movie> wdt:P577 ?release_date .<movie> wdt:P136 <genre> FILTER regex(str(?release_date), "<year>") . }'
+ ]
 
 query_spo = [
     ("<movie>","<action/role>",""),
     ("","<action/role>","<name>"),
     ("<movie>","http://www.wikidata.org/prop/direct/P577",""),
     ("<movie>","http://www.wikidata.org/prop/direct/P136",""),
+    ("","",""),
+    ("","",""),
+    ("","",""),
     ("","",""),
     ("","",""),
     ("","",""),
@@ -113,3 +115,5 @@ human_like_answers_embeddings = ["The answer according to my embeddings: <answer
                                  "According to my calculations, I believe it's <answer>",
                                  "Let me just check my embeddings, yup it's <answer>",                                 
                                  ]
+
+human_like_answers_recommendations = ["Here are some recommendations based on what you asked: "]
