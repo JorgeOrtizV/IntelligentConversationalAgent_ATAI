@@ -1,7 +1,9 @@
 import spacy
 import numpy as np
 from rapidfuzz import process,fuzz
+from sentence_transformers import SentenceTransformer, util
 import pandas as pd
+import torch
 
 from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo, predicates_dict
 
@@ -15,13 +17,21 @@ movie_dict = dict(zip(movie_df.movie_name, movie_df.uri))
 genre_dict = dict(zip(genre_df.genre,genre_df.uri))
 name_dict = dict(zip(name_df.name,name_df.uri))
 
+similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
+embeddings_movies = similarity_model.encode(list(movie_dict.keys()), convert_to_tensor=True)
+embeddings_genre = similarity_model.encode(list(genre_dict.keys()), convert_to_tensor=True)
+embeddings_names = similarity_model.encode(list(name_dict.keys()), convert_to_tensor=True)
+embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
+embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
+embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
+
 
 node_dict_map = {
-    "<movie>":movie_dict,
-    "<role>":roles_dict,
-    "<action>":actions_dict,
-    "<genre>":genre_dict,
-    "<name>":name_dict,
+    "<movie>":embeddings_movies,
+    "<role>":embeddings_roles,
+    "<action>":embeddings_actions,
+    "<genre>":embeddings_genre,
+    "<name>":embeddings_names,
     "<order>":order_dict,
                 }
 
@@ -37,30 +47,44 @@ nlp_textcat = spacy.load("./models/textcat/")
 #Function to match entity to entities in KG using fuzzy string similarity 
 def match_entity(entity,entity_dict):
     
-    result = None
-    substr_result = None
-    try:
-        for key,val in entity_dict.items():
-            if(entity.lower()==key.lower() and result==None):
-                result=val
-                print(f"exact match: {(key,val)}")
-            elif(entity.lower() in key.lower() and substr_result==None):
-                substr_result = val
-                print(f"substring match: {(key,val)}")
+    # result = None
+    # substr_result = None
+    # try:
+    #     for key,val in entity_dict.items():
+    #         if(entity.lower()==key.lower() and result==None):
+    #             result=val
+    #             print(f"exact match: {(key,val)}")
+    #         elif(entity.lower() in key.lower() and substr_result==None):
+    #             substr_result = val
+    #             print(f"substring match: {(key,val)}")
     
-        if(result!=None):
-            return result
-        if(substr_result!=None):
-            return substr_result
-    except Exception as e:
-        print("Exception in entity matching module: {}".format(e))
+    #     if(result!=None):
+    #         return result
+    #     if(substr_result!=None):
+    #         return substr_result
+    # except Exception as e:
+    #     print("Exception in entity matching module: {}".format(e))
     
-    print("fuzzy match")
+    # print("fuzzy match")
             
     
-    fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
-    print(fuzz_match)
-    return entity_dict[fuzz_match[0][0]]
+    # fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
+    # print(fuzz_match)
+    # return entity_dict[fuzz_match[0][0]]
+
+    embeddings1 = similarity_model.encode([entity], convert_to_tensor=True)
+    cosine_scores = util.cos_sim(embeddings1, entity_dict)
+    values, indices = torch.sort(cosine_scores, dim=-1, descending=True)
+    values = values[0][:3]
+    indices = indices[0][:3]
+
+    # Print top 3 matches
+    similarity_match=''
+    for i, idx in enumerate(indices):
+        similarity_match+="{} \t\t Score: {:.4f}, ".format(entity_dict[idx], values[i])
+
+    return entity_dict[indices[0]]
+
 
 #Function to detect entities in the text
 def NER_inference(text):
