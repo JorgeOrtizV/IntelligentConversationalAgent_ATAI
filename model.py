@@ -37,6 +37,27 @@ nlp_textcat = spacy.load("./models/textcat/")
 #Function to match entity to entities in KG using fuzzy string similarity 
 def match_entity(entity,entity_dict):
     
+    result = None
+    substr_result = None
+    try:
+        for key,val in entity_dict.items():
+            if(entity.lower()==key.lower() and result==None):
+                result=val
+                print("exact match")
+            elif(entity.lower() in key.lower() and substr_result==None):
+                substr_result = val
+                print("substring match")
+    
+        if(result!=None):
+            return result
+        if(substr_result!=None):
+            return substr_result
+    except Exception as e:
+        print("Exception in entity matching module: {}".format(e))
+    
+    print("fuzzy match")
+            
+    
     fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
     print(fuzz_match)
     return entity_dict[fuzz_match[0][0]]
@@ -76,7 +97,7 @@ def inference(input_chat_text):
     print("LABEL: ",label)
 
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label=="10"):
+    if(label=="9"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []
