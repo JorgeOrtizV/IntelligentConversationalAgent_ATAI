@@ -26,14 +26,23 @@ embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_t
 embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
 
 
-node_dict_map = {
+embeddings_map = {
     "<movie>":embeddings_movies,
     "<role>":embeddings_roles,
     "<action>":embeddings_actions,
     "<genre>":embeddings_genre,
     "<name>":embeddings_names,
-    "<order>":order_dict,
+    "<order>":embeddings_order,
                 }
+
+node_dict_map = {
+    "<movie>":movie_dict,
+    "<role>":roles_dict,
+    "<action>":actions_dict,
+    "<genre>":genre_dict,
+    "<name>":name_dict,
+    "<order>":order_dict,
+}
 
 
 #Load the trained models for NER and text-classification
@@ -45,7 +54,7 @@ nlp_textcat = spacy.load("./models/textcat/")
 
 
 #Function to match entity to entities in KG using fuzzy string similarity 
-def match_entity(entity,entity_dict):
+def match_entity(entity,entity_dict, embedding_dict):
     
     # result = None
     # substr_result = None
@@ -71,19 +80,21 @@ def match_entity(entity,entity_dict):
     # fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
     # print(fuzz_match)
     # return entity_dict[fuzz_match[0][0]]
-
+    import pdb; pdb.set_trace()
     embeddings1 = similarity_model.encode([entity], convert_to_tensor=True)
-    cosine_scores = util.cos_sim(embeddings1, entity_dict)
+    cosine_scores = util.cos_sim(embeddings1, embedding_dict)
     values, indices = torch.sort(cosine_scores, dim=-1, descending=True)
     values = values[0][:3]
     indices = indices[0][:3]
 
+    entities = list(entity_dict.keys())
+
     # Print top 3 matches
     similarity_match=''
     for i, idx in enumerate(indices):
-        similarity_match+="{} \t\t Score: {:.4f}, ".format(entity_dict[idx], values[i])
+        similarity_match+="{} \t\t Score: {:.4f}, ".format(entities[idx], values[i])
 
-    return entity_dict[indices[0]]
+    return entity_dict[entities[indices[0]]]
 
 
 #Function to detect entities in the text
@@ -172,8 +183,9 @@ def inference(input_chat_text):
         for entity,ent_type in ner_res["entities"].items():
 
             node_dict = node_dict_map[ent_type]
+            embedding_dict = embeddings_map[ent_type]
             print(ent_type,entity)
-            matched_node = match_entity(entity,node_dict)
+            matched_node = match_entity(entity,node_dict, embedding_dict)
 
             if(ent_type == "<action>" or ent_type == "<role>"):
                 ent_type = "<action/role>"
