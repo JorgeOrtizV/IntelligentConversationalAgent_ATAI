@@ -24,6 +24,7 @@ embeddings_names = similarity_model.encode(list(name_dict.keys()), convert_to_te
 embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
 embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
 embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
+embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
 
 
 embeddings_map = {
@@ -33,6 +34,7 @@ embeddings_map = {
     "<genre>":embeddings_genre,
     "<name>":embeddings_names,
     "<order>":embeddings_order,
+    "<predicate>": embeddings_predicates
                 }
 
 node_dict_map = {
@@ -42,6 +44,7 @@ node_dict_map = {
     "<genre>":genre_dict,
     "<name>":name_dict,
     "<order>":order_dict,
+    "<predicate>" : predicates_dict
 }
 
 
@@ -80,7 +83,7 @@ def match_entity(entity,entity_dict, embedding_dict):
     # fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
     # print(fuzz_match)
     # return entity_dict[fuzz_match[0][0]]
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     embeddings1 = similarity_model.encode([entity], convert_to_tensor=True)
     cosine_scores = util.cos_sim(embeddings1, embedding_dict)
     values, indices = torch.sort(cosine_scores, dim=-1, descending=True)
@@ -125,7 +128,7 @@ def textcat_inference(text):
 
 #Function to return sparQL query from input text
 def inference(input_chat_text):
-
+    second_option=None
     ner_res = NER_inference(input_chat_text)
     print(ner_res)
     label = textcat_inference(ner_res["text"])
@@ -143,16 +146,24 @@ def inference(input_chat_text):
             if pred in ['release', 'when', 'date', 'year']:
                 if label != "2": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(2, label))
+                    second_option = 2
                 else:
                     print('NER and textcat agreement')
             elif pred in ['genre', 'type', 'category']:
                 if label != "3": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
+                    second_option = 3
                 else:
                     print('NER and textcat agreement')
             elif pred in ['rated', 'rating', 'review', 'score']:
-                if label != "4": # Check that this is for the year questions
+                if label != "4" and label != "5" and label != "6" and label != "8": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
+                    if "<name>" in ner_res["entities"].values() and "<action>" in ner_res["entities"].values():
+                        second_option = 6
+                    elif "<genre>" in ner_res["entities"].values():
+                        second_option = 5
+                    else:
+                        second_option = 4
                 else:
                     print('NER and textcat agreement')
     # TODO: Naive way to check if recommendation, need to make it as last label
@@ -199,6 +210,33 @@ def inference(input_chat_text):
         query = query.replace("<genre>","?genre")
 
         constructed_query = prefix_string + query
+        if ('<movie>' in constructed_query or '<action/role>' in constructed_query or '<name>' in constructed_query) and second_option!=None:
+            query = query_list[second_option]
+            s,p,o = query_spo[second_option]
+
+            print(ner_res["text"],label,ner_res["entities"])    
+            
+            #Replace entities in the sparQL query with the detected entities
+
+            for entity,ent_type in ner_res["entities"].items():
+
+                node_dict = node_dict_map[ent_type]
+                embedding_dict = embeddings_map[ent_type]
+                print(ent_type,entity)
+                matched_node = match_entity(entity,node_dict, embedding_dict)
+
+                if(ent_type == "<action>" or ent_type == "<role>"):
+                    ent_type = "<action/role>"
+                s = s.replace(ent_type,matched_node)
+                p = p.replace(ent_type,matched_node)
+                o = o.replace(ent_type,matched_node)
+                query = query.replace(ent_type,matched_node)
+
+            #Default values if user hasn't provided values 
+            query = query.replace("<number>","10")
+            query = query.replace("<genre>","?genre")
+
+            constructed_query = prefix_string + query
 
         return {"query_type":query_type,"query":constructed_query,"spo":(s,p,o)}
 

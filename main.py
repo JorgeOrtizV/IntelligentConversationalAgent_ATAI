@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import pairwise_distances
 
-from model import inference, match_entity, movie_dict
+from model import inference, match_entity, movie_dict, embeddings_movies
 from data import human_like_answers,human_like_answers_embeddings
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
@@ -58,7 +58,7 @@ class Agent:
                             #Obtain the movienames from the entities and find 10 simliar movies using entity_similarity()
                             entity_names = inference_res["entity_list"]
                             print("ENTITIES: ",entity_names)
-                            recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict)
+                            recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict, embedding_dict=embeddings_movies)
 
                             # Add to final message response
                             final_response = "Here are some recommendations: "
@@ -108,6 +108,7 @@ class Agent:
 
                         room.post_messages(final_response)                       
                         room.mark_as_processed(message)
+                        print(final_response)
                     except Exception as error:
                         print("Problems parsing this message {}".format(message.message))
                         print('Obtained following exception: {}'.format(error))
@@ -181,10 +182,10 @@ class KG:
 
         return res[:top_n]
     
-    def entity_similarity(self,entity_list,entity_dict):
+    def entity_similarity(self,entity_list,entity_dict, embedding_dict):
         dist_all = []
         for entity in entity_list:
-            entity_uri = match_entity(entity,entity_dict)
+            entity_uri = match_entity(entity,entity_dict, embedding_dict)
             print(entity_uri)
             ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
             # we compare the embedding of the query entity to all other entity embeddings
