@@ -87,6 +87,7 @@ query_list = ['SELECT ?y WHERE { <movie> <action/role> ?x . ?x rdfs:label ?y}',
  'SELECT ?lbl  WHERE { <movie> wdt:P31 wd:Q11424 . ?movie wdt:P577 ?release_date ?movie rdfs:label ?lbl .FILTER regex(str(?release_date), "<year>") .}',
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie <action> <name> . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}',
  #'ASK {<name> <action> <movie> . <movie> wdt:P577 ?release_date .<movie> wdt:P136 <genre> FILTER regex(str(?release_date), "<year>") . }'
+ 'SELECT ?movie ?imdbId WHERE { <movie> wdt:P31 wd:Q11424 . <movie> wdt:P345 ?imdbId . } LIMIT 1', # Obtain IMBd ID
  ]
 
 query_spo = [

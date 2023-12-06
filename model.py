@@ -110,7 +110,7 @@ def match_entity(entity,entity_dict, embedding_dict):
     similarity_match=''
     for i, idx in enumerate(indices):
         similarity_match+="{} \t\t Score: {:.4f}, ".format(entities[idx], values[i])
-
+    print("Entity similarity: ", similarity_match)
     return entity_dict[entities[indices[0]]]
 
 
@@ -186,7 +186,7 @@ def inference(input_chat_text):
         query_type = "REC"
         ent_list = []
         for entity,ent_type in ner_res["entities"].items():
-            if(ent_type == "<name>" or ent_type == "<movie>"):
+            if(ent_type == "<name>" or ent_type == "<movie>" or ent_type == "<genre>"):
                 ent_list.append(entity)
                 print(entity)
             else:

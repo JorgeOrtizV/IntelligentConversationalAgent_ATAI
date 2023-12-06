@@ -23,6 +23,9 @@ DDIS = rdflib.Namespace('http://ddis.ch/atai/')
 RDFS = rdflib.namespace.RDFS
 SCHEMA = rdflib.Namespace('http://schema.org/')
 
+name_df  = pd.read_pickle("./data/names.pkl")
+
+
 #The agent class
 class Agent:
     def __init__(self, username, password):
@@ -185,6 +188,8 @@ class KG:
     def entity_similarity(self,entity_list,entity_dict, embedding_dict):
         dist_all = []
         for entity in entity_list:
+            # Check if the entity is in names:
+            if entity in 
             entity_uri = match_entity(entity,entity_dict, embedding_dict)
             print(entity_uri)
             ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
