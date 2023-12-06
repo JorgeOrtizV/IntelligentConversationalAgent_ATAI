@@ -4,6 +4,7 @@ from rapidfuzz import process,fuzz
 from sentence_transformers import SentenceTransformer, util
 import pandas as pd
 import torch
+import pickle
 
 from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo, predicates_dict
 
@@ -18,14 +19,27 @@ genre_dict = dict(zip(genre_df.genre,genre_df.uri))
 name_dict = dict(zip(name_df.name,name_df.uri))
 
 similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
-embeddings_movies = similarity_model.encode(list(movie_dict.keys()), convert_to_tensor=True)
-embeddings_genre = similarity_model.encode(list(genre_dict.keys()), convert_to_tensor=True)
-embeddings_names = similarity_model.encode(list(name_dict.keys()), convert_to_tensor=True)
-embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
-embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
-embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
-embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
-
+# embeddings_movies = similarity_model.encode(list(movie_dict.keys()), convert_to_tensor=True)
+# embeddings_genre = similarity_model.encode(list(genre_dict.keys()), convert_to_tensor=True)
+# embeddings_names = similarity_model.encode(list(name_dict.keys()), convert_to_tensor=True)
+# embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
+# embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
+# embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
+# embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
+with open('data/embeddings/embeddings_movies.pkl', 'rb') as f:
+    embeddings_movies = pickle.load(f)
+with open('data/embeddings/embeddings_genre.pkl', 'rb') as f:
+    embeddings_genre = pickle.load(f)
+with open('data/embeddings/embeddings_names.pkl', 'rb') as f:
+    embeddings_names = pickle.load(f)
+with open('data/embeddings/embeddings_actions.pkl', 'rb') as f:
+    embeddings_actions = pickle.load(f)
+with open('data/embeddings/embeddings_roles.pkl', 'rb') as f:
+    embeddings_roles = pickle.load(f)
+with open('data/embeddings/embeddings_order.pkl', 'rb') as f:
+    embeddings_order = pickle.load(f)
+with open('data/embeddings/embeddings_predicates.pkl', 'rb') as f:
+    embeddings_predicates = pickle.load(f)
 
 embeddings_map = {
     "<movie>":embeddings_movies,
