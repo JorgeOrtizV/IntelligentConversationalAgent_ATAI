@@ -9,7 +9,7 @@ import pandas as pd
 from sklearn.metrics import pairwise_distances
 import traceback
 
-from model import inference, match_entity, movie_dict, embeddings_movies, name_dict, genre_dict
+from model import inference, match_entity, movie_dict, embeddings_movies, name_dict, genre_dict, embeddings_names
 from data import human_like_answers,human_like_answers_embeddings, prefix_string
 
 #Declaring some rdflib namespaces
@@ -18,6 +18,10 @@ WDT = rdflib.Namespace('http://www.wikidata.org/prop/direct/')
 DDIS = rdflib.Namespace('http://ddis.ch/atai/')
 RDFS = rdflib.namespace.RDFS
 SCHEMA = rdflib.Namespace('http://schema.org/')
+
+# Open json IMDB file
+with open('data/movienet/images.json', 'r') as file:
+    image_json = json.load(file)
 
 class KG:
     def __init__(self, graph_dir='14_graph.nt'):
@@ -70,7 +74,7 @@ class KG:
     
     def entity_similarity(self,entity_list,entity_dict, embedding_dict):
         dist_all = []
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         labels = []
         for entity in entity_list:
             # TODO : Fix this queries
@@ -88,7 +92,7 @@ class KG:
                 query = query.replace('<genre>', genre_dict[entity])
                 response = test_graph.search(prefix_string+query)
 
-            entity_uri = match_entity(entity,entity_dict, embedding_dict)
+            entity_uri, score = match_entity(entity,entity_dict, embedding_dict)
             ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
             # we compare the embedding of the query entity to all other entity embeddings
             dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
@@ -117,7 +121,7 @@ class KG:
     
 def main(message, test_graph):
     try:
-        # import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         inference_res = inference(message)
         query_type= inference_res["query_type"]
         print(query_type)
@@ -134,6 +138,32 @@ def main(message, test_graph):
             final_response = "Here are some recommendations: "
             for i,rec in enumerate(recommendations):
                 final_response+=f"\n {rec}"
+        
+        elif(query_type=="IMG"):
+            entity_names = inference_res['entity_list']
+            query = inference_res["query"]
+            for entity in entity_names:
+                # Checking with two dictionaries to obtain the best match in case of NER misclassifications. Ideally we only solve small typos.
+                uri_movies, score_movies = match_entity(entity, movie_dict, embeddings_movies)
+                uri_names, score_names = match_entity(entity, name_dict, embeddings_names)
+                images=[]
+                if score_movies>=score_names:
+                    query=query.replace("<movie>", uri_movies)
+                else:
+                    query=query.replace("<movie>", uri_names)
+                imbd_id = test_graph.search(prefix_string+query)
+                # I don't like to iterate through the json file, since it is huge, but I don't see a better way given the format
+                for entry in image_json:
+                    if imbd_id in entry['movie'] or imbd_id in entry['cast']:
+                        images.append(entry['img'])
+                    if len(images) == 3:
+                        break
+                if len(images) == 0:
+                    final_response = "I am sorry, I don't have any image of {}".format(entity)
+                else:
+                    final_response = "Here are the images of {} I was able to find\n".format(entity)
+                    images="\n".join(images)
+                    final_response+=images
             
         else:
             #Query is a question

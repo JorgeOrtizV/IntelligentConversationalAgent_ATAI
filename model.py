@@ -72,32 +72,6 @@ nlp_textcat = spacy.load("./models/textcat/")
 
 #Function to match entity to entities in KG using fuzzy string similarity 
 def match_entity(entity,entity_dict, embedding_dict):
-    
-    # result = None
-    # substr_result = None
-    # try:
-    #     for key,val in entity_dict.items():
-    #         if(entity.lower()==key.lower() and result==None):
-    #             result=val
-    #             print(f"exact match: {(key,val)}")
-    #         elif(entity.lower() in key.lower() and substr_result==None):
-    #             substr_result = val
-    #             print(f"substring match: {(key,val)}")
-    
-    #     if(result!=None):
-    #         return result
-    #     if(substr_result!=None):
-    #         return substr_result
-    # except Exception as e:
-    #     print("Exception in entity matching module: {}".format(e))
-    
-    # print("fuzzy match")
-            
-    
-    # fuzz_match = process.extract(entity, entity_dict.keys(), scorer=fuzz.WRatio, limit=3)
-    # print(fuzz_match)
-    # return entity_dict[fuzz_match[0][0]]
-    #import pdb; pdb.set_trace()
     embeddings1 = similarity_model.encode([entity], convert_to_tensor=True)
     cosine_scores = util.cos_sim(embeddings1, embedding_dict)
     values, indices = torch.sort(cosine_scores, dim=-1, descending=True)
@@ -111,7 +85,7 @@ def match_entity(entity,entity_dict, embedding_dict):
     for i, idx in enumerate(indices):
         similarity_match+="{} \t\t Score: {:.4f}, ".format(entities[idx], values[i])
     print("Entity similarity: ", similarity_match)
-    return entity_dict[entities[indices[0]]]
+    return entity_dict[entities[indices[0]]], values[0]
 
 
 #Function to detect entities in the text
@@ -149,9 +123,12 @@ def inference(input_chat_text):
 
     print("LABEL: ",label)
     detected_predicates = [k for k, v in ner_res["entities"].items() if v=='<predicate>']
-    #import pdb;pdb.set_trace()
+    import pdb;pdb.set_trace()
     # texcat override based on NER
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates:
+        label = "10"
+        print('label is now 10 - NER override')
+    elif 'image' in detected_predicates or 'picture' in detected_predicates or 'photo' in detected_predicates:
         label = "9"
         print('label is now 9 - NER override')
     # TODO: Analyze if it is safe to override label here. I am not sure, so let's stick with text cat as per now.
@@ -181,7 +158,7 @@ def inference(input_chat_text):
                 else:
                     print('NER and textcat agreement')
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label=="9"):
+    if(label=="10"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []
@@ -193,7 +170,16 @@ def inference(input_chat_text):
                 print(ent_type)
 
         return {"query_type": query_type,"entity_list":ent_list}
-
+    elif(label == "9"):
+        query_type = "IMG"
+        ent_list = []
+        for entity,ent_type in ner_res["entities"].items():
+            if(ent_type == "<movie>" or ent_type=="<name>"):
+                ent_list.append(entity)
+                print(entity)
+            else:
+                print(ent_type)
+        return {"query_type": query_type,"entity_list":ent_list, "query":query_list[int(label)]}
     else:
         query_type = "QUE"
 
@@ -210,7 +196,7 @@ def inference(input_chat_text):
             node_dict = node_dict_map[ent_type]
             embedding_dict = embeddings_map[ent_type]
             print(ent_type,entity)
-            matched_node = match_entity(entity,node_dict, embedding_dict)
+            matched_node, score = match_entity(entity,node_dict, embedding_dict)
 
             if(ent_type == "<action>" or ent_type == "<role>"):
                 ent_type = "<action/role>"
@@ -237,7 +223,7 @@ def inference(input_chat_text):
                 node_dict = node_dict_map[ent_type]
                 embedding_dict = embeddings_map[ent_type]
                 print(ent_type,entity)
-                matched_node = match_entity(entity,node_dict, embedding_dict)
+                matched_node, score = match_entity(entity,node_dict, embedding_dict)
 
                 if(ent_type == "<action>" or ent_type == "<role>"):
                     ent_type = "<action/role>"
