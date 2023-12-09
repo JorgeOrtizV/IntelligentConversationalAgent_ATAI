@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import pairwise_distances
 
-from model import inference, match_entity, movie_dict, embeddings_movies
-from data import human_like_answers,human_like_answers_embeddings
+from model import inference, match_entity, movie_dict, embeddings_movies, name_dict, genre_dict, embeddings_names
+from data import human_like_answers,human_like_answers_embeddings, prefix_string
 
 DEFAULT_HOST_URL = 'https://speakeasy.ifi.uzh.ch'
 listen_freq = 2
@@ -23,7 +23,9 @@ DDIS = rdflib.Namespace('http://ddis.ch/atai/')
 RDFS = rdflib.namespace.RDFS
 SCHEMA = rdflib.Namespace('http://schema.org/')
 
-name_df  = pd.read_pickle("./data/names.pkl")
+# Open json IMDB file
+with open('data/movienet/images.json', 'r') as file:
+    image_json = json.load(file)
 
 
 #The agent class
@@ -64,10 +66,38 @@ class Agent:
                             recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict, embedding_dict=embeddings_movies)
 
                             # Add to final message response
-                            final_response = "Here are some recommendations: "
+                            final_response = "Here are some recommendations you may be interested in: "
                             for i,rec in enumerate(recommendations):
                                 final_response+=f"\n {rec}"
-                            
+                        
+                        elif(query_type=="IMG"):
+                            entity_names = inference_res['entity_list']
+                            query = inference_res["query"]
+                            for entity in entity_names:
+                                # Checking with two dictionaries to obtain the best match in case of NER misclassifications. Ideally we only solve small typos.
+                                uri_movies, score_movies = match_entity(entity, movie_dict, embeddings_movies)
+                                uri_names, score_names = match_entity(entity, name_dict, embeddings_names)
+                                images=[]
+                                if score_movies>=score_names:
+                                    query=query.replace("<movie>", uri_movies)
+                                else:
+                                    query=query.replace("<movie>", uri_names)
+                                self.graph.search(prefix_string+query)
+                                response, = self.graph.response
+                                imbd_id = str(response[0])
+                                # I don't like to iterate through the json file, since it is huge, but I don't see a better way given the format
+                                for entry in image_json:
+                                    if imbd_id in entry['movie'] or imbd_id in entry['cast']:
+                                        images.append(entry['img'])
+                                    if len(images) == 3:
+                                        break
+                                if len(images) == 0:
+                                    final_response = "I am sorry, I don't have any image of {}".format(entity)
+                                else:
+                                    final_response = "Here are the images of {} I was able to find\n".format(entity)
+                                    images="\n".join(images)
+                                    final_response+=images
+
                         else:
                             #Query is a question
 
@@ -189,17 +219,56 @@ class KG:
         dist_all = []
         for entity in entity_list:
             # Check if the entity is in names:
-            if entity in 
-            entity_uri = match_entity(entity,entity_dict, embedding_dict)
-            print(entity_uri)
-            ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
-            # we compare the embedding of the query entity to all other entity embeddings
-            dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
+            if entity in name_dict.keys():
+                #query='SELECT ?y WHERE { ?x <action/role> <name> . ?x rdfs:label ?y . ?x wdt:P136 <genre> . }'
+                query='SELECT ?movie ?title ?rating WHERE { ?movie <action/role> <name> . ?movie rdfs:label ?title . ?movie wdt:P136 ?genre . ?movie ddis:rating ?rating } ORDER BY DESC(?rating) LIMIT 10'
+                uri = name_dict[entity]
+                query = query.replace('<name>', uri)
+                query = query.replace('<action/role>', '<http://www.wikidata.org/prop/direct/P161>')
+                query = query.replace("<genre>","?genre")
+                self.graph.search(prefix_string+query)
+                if(len(self.graph.response)>0):
+                    print("Here are some movies featuring {}".format(entity))
+                    movies = [i for i in set(self.graph.response)]
+                    for res in movies:
+                        print(str(res[1]))
+                        # Search for similar movies
+                        ent = self.ent2id[rdflib.term.URIRef(str(res[0]))]
+                        dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
+                        same_idx = np.where(dist==0)[0]
+                        dist[same_idx]=99999
+                        #print(dist)
+                        dist_all.append(dist)
+                else: # In case we have no movies with ratings we just find something we the given name
+                    entity_uri = match_entity(entity,entity_dict, embedding_dict)
+                    print(entity_uri)
+                    ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
+                    # we compare the embedding of the query entity to all other entity embeddings
+                    dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
 
-            same_idx = np.where(dist==0)[0]
-            dist[same_idx]=99999
-            #print(dist)
-            dist_all.append(dist)
+                    same_idx = np.where(dist==0)[0]
+                    dist[same_idx]=99999
+                    #print(dist)
+                    dist_all.append(dist)
+
+            elif entity in genre_dict.keys():
+                query='SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY DESC(?rating) LIMIT 10}'
+                query = query.replace('<genre>', genre_dict[entity])
+                self.graph.search(prefix_string+query)
+                labels = [str(i[0]) for i in self.graph.response]
+                return labels
+            
+            else:
+                entity_uri = match_entity(entity,entity_dict, embedding_dict)
+                print(entity_uri)
+                ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
+                # we compare the embedding of the query entity to all other entity embeddings
+                dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
+
+                same_idx = np.where(dist==0)[0]
+                dist[same_idx]=99999
+                #print(dist)
+                dist_all.append(dist)
 
         total_dist = np.array([sum(x) for x in zip(*dist_all)])
 
