@@ -117,4 +117,8 @@ human_like_answers_embeddings = ["The answer according to my embeddings: <answer
                                  "Let me just check my embeddings, yup it's <answer>",                                 
                                  ]
 
-human_like_answers_recommendations = ["Here are some recommendations based on what you asked: "]
+human_like_answers_recommendations = ["Here are some recommendations based on what you asked: ",
+                                      "Hmm...how about these?: ",
+                                      "You could check these out: ",
+                                      "You'd probably like these : ",
+                                      ]
