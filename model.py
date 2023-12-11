@@ -13,6 +13,7 @@ from data import roles_dict, actions_dict, order_dict, prefix_string, query_list
 movie_df = pd.read_pickle("./data/movies.pkl")
 genre_df = pd.read_pickle("./data/genres.pkl")
 name_df  = pd.read_pickle("./data/names.pkl")
+final_crowd_df = pd.read_pickle("./data/crowd_data_preprocessed.pkl")
 
 movie_dict = dict(zip(movie_df.movie_name, movie_df.uri))
 genre_dict = dict(zip(genre_df.genre,genre_df.uri))
@@ -67,7 +68,7 @@ node_dict_map = {
 nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
 
-nlp_textcat = spacy.load("./models/textcat_v3_13_99/")
+nlp_textcat = spacy.load("./models/textcat/")
 
 
 #Function to match entity to entities in KG using fuzzy string similarity 
@@ -204,6 +205,29 @@ def inference(input_chat_text):
             p = p.replace(ent_type,matched_node)
             o = o.replace(ent_type,matched_node)
             query = query.replace(ent_type,matched_node)
+
+        for _,row in final_crowd_df.iterrows():
+            if(row["Input1ID"].split(":")[-1] == s.split("/")[-1].replace(">","") and
+               row["Input2ID"].split(":")[-1] == p.split("/")[-1].replace(">","")):
+                print(row["Input1ID"].split(":")[-1],s,row["Input2ID"].split(":")[-1],p)
+                
+                answer = None
+                if(row["Answer_bool"]==False):
+                    if(row["Fix_value"]==None):
+                        answer = row["Input3ID"]
+                    else:
+                        answer = row["Fix_value"]
+                else:
+                    answer = row["Input3ID"]
+                
+                
+                return{"query_type":"CROWD",
+                       "IRA":row["Inter_rater_agreement"],
+                       "answer":answer,
+                       "no_correct":row["No_correct"],
+                       "no_incorrect":row["No_incorrect"]
+                      }
+            
 
         #Default values if user hasn't provided values 
         query = query.replace("<number>","10")

@@ -20,8 +20,11 @@ RDFS = rdflib.namespace.RDFS
 SCHEMA = rdflib.Namespace('http://schema.org/')
 
 # Open json IMDB file
-with open('data/movienet/images.json', 'r') as file:
-    image_json = json.load(file)
+try:
+    with open('data/movienet/images.json', 'r') as file:
+        image_json = json.load(file)
+except:
+    image_json=None
 
 class KG:
     def __init__(self, graph_dir='14_graph.nt'):
@@ -181,6 +184,16 @@ def main(message, test_graph):
                     final_response = "Here are the images of {} I was able to find\n".format(entity)
                     images="\n".join(images)
                     final_response+=images
+        elif(query_type=="CROWD"):
+            answer = inference_res["answer"]
+            IRA = inference_res["IRA"]
+            no_correct = inference_res["no_correct"]
+            no_incorrect = inference_res["no_incorrect"]
+            final_response = f"""{answer} - according to the crowd, who had an inter-rater agreement of {IRA} in this batch; 
+            the answer distribution for this task was {no_correct} support vote(s) and {no_incorrect} reject vote(s).
+            """
+
+
             
         else:
             #Query is a question
