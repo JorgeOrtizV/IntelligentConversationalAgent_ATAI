@@ -67,6 +67,9 @@ node_dict_map = {
 
 nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
+# NER for predicates
+nlp_NER2 = spacy.load("./models/NER2/loss_100/")
+nlp_NER2.add_pipe("merge_entities")
 
 nlp_textcat = spacy.load("./models/textcat/")
 
@@ -99,6 +102,15 @@ def NER_inference(text):
     
     return {"text":preprocessed,"entities":ent_dict}
 
+def NER2_inference(text):
+
+    doc = nlp_NER2(text) # input sample text
+    preprocessed = " ".join([t.text if not t.ent_type_ else f"<{t.ent_type_.lower()}>" for t in doc])
+    ent_dict = {t.text:f"<{t.ent_type_}>" for t in doc if t.ent_type}
+    #print(ent_dict)
+    
+    return {"text":preprocessed,"entities":ent_dict}
+
 #Function to classify text into question type and return the label
 def textcat_inference(text):
 
@@ -119,11 +131,16 @@ def textcat_inference(text):
 def inference(input_chat_text):
     second_option=None
     ner_res = NER_inference(input_chat_text)
+    ner_preds = NER2_inference(input_chat_text)
     print(ner_res)
+    print(ner_preds)
     label = textcat_inference(ner_res["text"])
 
     print("LABEL: ",label)
     detected_predicates = [k for k, v in ner_res["entities"].items() if v=='<predicate>']
+    extra_predicates = [k for k, v in ner_preds["entities"].items() if v=='<predicate>']
+    if len(extra_predicates>0):
+        detected_predicates.extend(extra_predicates)
     import pdb;pdb.set_trace()
     # texcat override based on NER
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates:
