@@ -139,7 +139,7 @@ class KG:
     
 def main(message, test_graph):
     try:
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         inference_res = inference(message)
         query_type= inference_res["query_type"]
         print(query_type)
