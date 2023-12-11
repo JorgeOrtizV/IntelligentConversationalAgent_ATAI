@@ -20,8 +20,11 @@ RDFS = rdflib.namespace.RDFS
 SCHEMA = rdflib.Namespace('http://schema.org/')
 
 # Open json IMDB file
-with open('data/movienet/images.json', 'r') as file:
-    image_json = json.load(file)
+try:
+    with open('data/movienet/images.json', 'r') as file:
+        image_json = json.load(file)
+except:
+    image_json=None
 
 class KG:
     def __init__(self, graph_dir='14_graph.nt'):

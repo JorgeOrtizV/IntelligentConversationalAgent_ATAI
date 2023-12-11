@@ -68,7 +68,7 @@ node_dict_map = {
 nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
 
-nlp_textcat = spacy.load("./models/textcat_v3_13_99/")
+nlp_textcat = spacy.load("./models/textcat/")
 
 
 #Function to match entity to entities in KG using fuzzy string similarity 
@@ -206,7 +206,7 @@ def inference(input_chat_text):
             o = o.replace(ent_type,matched_node)
             query = query.replace(ent_type,matched_node)
 
-        for index,row in final_crowd_df.iterrows():
+        for _,row in final_crowd_df.iterrows():
             if(row["Input1ID"].split(":")[-1] == s.split("/")[-1].replace(">","") and
                row["Input2ID"].split(":")[-1] == p.split("/")[-1].replace(">","")):
                 print(row["Input1ID"].split(":")[-1],s,row["Input2ID"].split(":")[-1],p)
