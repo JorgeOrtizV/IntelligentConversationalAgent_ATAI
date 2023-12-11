@@ -199,7 +199,7 @@ def inference(input_chat_text):
             print(ent_type,entity)
             matched_node, score = match_entity(entity,node_dict, embedding_dict)
 
-            if(ent_type == "<action>" or ent_type == "<role>"):
+            if(ent_type == "<action>" or ent_type == "<role>" or ent_type == "<predicate>"):
                 ent_type = "<action/role>"
             s = s.replace(ent_type,matched_node)
             p = p.replace(ent_type,matched_node)
@@ -207,6 +207,7 @@ def inference(input_chat_text):
             query = query.replace(ent_type,matched_node)
 
         for _,row in final_crowd_df.iterrows():
+            
             if(row["Input1ID"].split(":")[-1] == s.split("/")[-1].replace(">","") and
                row["Input2ID"].split(":")[-1] == p.split("/")[-1].replace(">","")):
                 print(row["Input1ID"].split(":")[-1],s,row["Input2ID"].split(":")[-1],p)
