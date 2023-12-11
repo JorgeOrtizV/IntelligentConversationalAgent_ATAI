@@ -198,6 +198,11 @@ class KG:
         self.response=self.graph.query(query)
     
     def embedding_prediction(self,head_uri,pred_uri,top_n = 1):
+        regex=re.compile('<.*>')
+        if not regex.match(head_uri):
+            head_uri = '<'+head_uri+'>'
+        if not regex.match(pred_uri):
+            pred_uri = '<'+pred_uri+'>'
         head = self.entity_emb[self.ent2id[rdflib.term.URIRef(head_uri[1:-1])]]
         # relation
         pred = self.relation_emb[self.rel2id[rdflib.term.URIRef(pred_uri[1:-1])]]
