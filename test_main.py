@@ -75,32 +75,47 @@ class KG:
     def entity_similarity(self,entity_list,entity_dict, embedding_dict):
         dist_all = []
         #import pdb; pdb.set_trace()
-        labels = []
         for entity in entity_list:
             # TODO : Fix this queries
             # TODO : Format response as a list of strings and add them to label.
             # I was planning to obtain a couple of recommendations based on embeddings in case a movie and a person have a same name.
             if entity in name_dict.keys():
-                query='SELECT ?y WHERE { ?x <action/role> <name> . ?x rdfs:label ?y . ?x wdt:P136 <genre> . }'
+                #query='SELECT ?y WHERE { ?x <action/role> <name> . ?x rdfs:label ?y . ?x wdt:P136 <genre> . }'
+                query='SELECT ?movie ?title ?rating WHERE { ?movie <action/role> <name> . ?movie rdfs:label ?title . ?movie wdt:P136 ?genre . ?movie ddis:rating ?rating } ORDER BY DESC(?rating) LIMIT 10'
                 uri = name_dict[entity]
                 query = query.replace('<name>', uri)
                 query = query.replace('<action/role>', '<http://www.wikidata.org/prop/direct/P161>')
                 query = query.replace("<genre>","?genre")
-                response = test_graph.search(prefix_string+query)
+                test_graph.search(prefix_string+query)
+                if(len(test_graph.response)>0):
+                    print("Here are some movies featuring {}".format(entity))
+                    movies = [i for i in set(test_graph.response)]
+                    for res in movies:
+                        print(str(res[1]))
+                        # Search for similar movies
+                        ent = self.ent2id[rdflib.term.URIRef(str(res[0]))]
+                        dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
+                        same_idx = np.where(dist==0)[0]
+                        dist[same_idx]=99999
+                        #print(dist)
+                        dist_all.append(dist)
+
             elif entity in genre_dict.keys():
                 query='SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY DESC(?rating) LIMIT 10}'
                 query = query.replace('<genre>', genre_dict[entity])
-                response = test_graph.search(prefix_string+query)
+                test_graph.search(prefix_string+query)
+                labels = [str(i[0]) for i in test_graph.response]
+                return labels
+            else:
+                entity_uri, score = match_entity(entity,entity_dict, embedding_dict)
+                ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
+                # we compare the embedding of the query entity to all other entity embeddings
+                dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
 
-            entity_uri, score = match_entity(entity,entity_dict, embedding_dict)
-            ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
-            # we compare the embedding of the query entity to all other entity embeddings
-            dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
-
-            same_idx = np.where(dist==0)[0]
-            dist[same_idx]=99999
-            #print(dist)
-            dist_all.append(dist)
+                same_idx = np.where(dist==0)[0]
+                dist[same_idx]=99999
+                #print(dist)
+                dist_all.append(dist)
 
         total_dist = np.array([sum(x) for x in zip(*dist_all)])
 
@@ -135,7 +150,7 @@ def main(message, test_graph):
             recommendations = test_graph.entity_similarity(entity_names,entity_dict=movie_dict, embedding_dict=embeddings_movies)
 
             # Add to final message response
-            final_response = "Here are some recommendations: "
+            final_response = "Here are some recommendations you may be interested in: "
             for i,rec in enumerate(recommendations):
                 final_response+=f"\n {rec}"
         
@@ -151,7 +166,9 @@ def main(message, test_graph):
                     query=query.replace("<movie>", uri_movies)
                 else:
                     query=query.replace("<movie>", uri_names)
-                imbd_id = test_graph.search(prefix_string+query)
+                test_graph.search(prefix_string+query)
+                response, = test_graph.response
+                imbd_id = str(response[0])
                 # I don't like to iterate through the json file, since it is huge, but I don't see a better way given the format
                 for entry in image_json:
                     if imbd_id in entry['movie'] or imbd_id in entry['cast']:

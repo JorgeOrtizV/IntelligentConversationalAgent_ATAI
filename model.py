@@ -67,7 +67,7 @@ node_dict_map = {
 nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
 
-nlp_textcat = spacy.load("./models/textcat/")
+nlp_textcat = spacy.load("./models/textcat_v3_13_99/")
 
 
 #Function to match entity to entities in KG using fuzzy string similarity 

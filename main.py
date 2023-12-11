@@ -63,7 +63,7 @@ class Agent:
                             #Obtain the movienames from the entities and find 10 simliar movies using entity_similarity()
                             entity_names = inference_res["entity_list"]
                             print("ENTITIES: ",entity_names)
-                            recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict, embedding_dict=embeddings_movies)
+                            recommendations = self.graph.entity_similarity(entity_names,entity_dict=movie_dict, embedding_dict=embeddings_movies, room=room)
 
                             # Add to final message response
                             final_response = "Here are some recommendations you may be interested in: "
@@ -88,7 +88,7 @@ class Agent:
                                 # I don't like to iterate through the json file, since it is huge, but I don't see a better way given the format
                                 for entry in image_json:
                                     if imbd_id in entry['movie'] or imbd_id in entry['cast']:
-                                        images.append(entry['img'])
+                                        images.append('image:'+entry['img'].split('.')[0])
                                     if len(images) == 3:
                                         break
                                 if len(images) == 0:
@@ -215,7 +215,7 @@ class KG:
 
         return res[:top_n]
     
-    def entity_similarity(self,entity_list,entity_dict, embedding_dict):
+    def entity_similarity(self,entity_list,entity_dict, embedding_dict, room=None):
         dist_all = []
         for entity in entity_list:
             # Check if the entity is in names:
@@ -226,12 +226,12 @@ class KG:
                 query = query.replace('<name>', uri)
                 query = query.replace('<action/role>', '<http://www.wikidata.org/prop/direct/P161>')
                 query = query.replace("<genre>","?genre")
-                self.graph.search(prefix_string+query)
-                if(len(self.graph.response)>0):
-                    print("Here are some movies featuring {}".format(entity))
-                    movies = [i for i in set(self.graph.response)]
+                self.search(prefix_string+query)
+                if(len(self.response)>0):
+                    sub_res = "Here are some movies featuring {}\n".format(entity)
+                    movies = [i for i in set(self.response)]
                     for res in movies:
-                        print(str(res[1]))
+                        sub_res += str(res[1])+"\n"
                         # Search for similar movies
                         ent = self.ent2id[rdflib.term.URIRef(str(res[0]))]
                         dist = pairwise_distances(self.entity_emb[ent].reshape(1, -1), self.entity_emb).reshape(-1)
@@ -239,8 +239,10 @@ class KG:
                         dist[same_idx]=99999
                         #print(dist)
                         dist_all.append(dist)
+                    print(sub_res)
+                    room.post_messages(sub_res)
                 else: # In case we have no movies with ratings we just find something we the given name
-                    entity_uri = match_entity(entity,entity_dict, embedding_dict)
+                    entity_uri, score = match_entity(entity,entity_dict, embedding_dict)
                     print(entity_uri)
                     ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
                     # we compare the embedding of the query entity to all other entity embeddings
@@ -254,12 +256,12 @@ class KG:
             elif entity in genre_dict.keys():
                 query='SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY DESC(?rating) LIMIT 10}'
                 query = query.replace('<genre>', genre_dict[entity])
-                self.graph.search(prefix_string+query)
-                labels = [str(i[0]) for i in self.graph.response]
+                self.search(prefix_string+query)
+                labels = [str(i[0]) for i in self.response]
                 return labels
             
             else:
-                entity_uri = match_entity(entity,entity_dict, embedding_dict)
+                entity_uri, score = match_entity(entity,entity_dict, embedding_dict)
                 print(entity_uri)
                 ent = self.ent2id[rdflib.term.URIRef(entity_uri[1:-1])]
                 # we compare the embedding of the query entity to all other entity embeddings
