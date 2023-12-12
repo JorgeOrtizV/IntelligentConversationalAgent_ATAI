@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 import pickle
 
-from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo, predicates_dict, crowd_dict
+from data import roles_dict, actions_dict, order_dict, prefix_string, query_list, query_spo, predicates_dict, crowd_dict, association_dict
 
 #Load the data
 
@@ -26,8 +26,9 @@ similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
 # embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
 # embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
 # embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
-# embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
+embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
 # embeddings_crowd = similarity_model.encode(list(crowd_dict.keys()), convert_to_tensor=True)
+# embeddings_associations = similarity_model.encode(list(association_dict.keys()), convert_to_tensor=True)
 with open('data/embeddings/embeddings_movies.pkl', 'rb') as f:
     embeddings_movies = pickle.load(f)
 with open('data/embeddings/embeddings_genre.pkl', 'rb') as f:
@@ -40,12 +41,12 @@ with open('data/embeddings/embeddings_roles.pkl', 'rb') as f:
     embeddings_roles = pickle.load(f)
 with open('data/embeddings/embeddings_order.pkl', 'rb') as f:
     embeddings_order = pickle.load(f)
-with open('data/embeddings/embeddings_predicates.pkl', 'rb') as f:
-    embeddings_predicates = pickle.load(f)
+# with open('data/embeddings/embeddings_predicates.pkl', 'rb') as f:
+#     embeddings_predicates = pickle.load(f)
 with open('data/embeddings/embeddings_crowd.pkl', 'rb') as f:
     embeddings_crowd = pickle.load(f)
-# with open('data/embeddings/embeddings_crowd.pkl', 'wb') as f:
-#     pickle.dump(embeddings_crowd, f)
+with open('data/embeddings/embeddings_associations.pkl', 'wb') as f:
+    pickle.dump(embeddings_predicates, f)
 
 embeddings_map = {
     "<movie>":embeddings_movies,
@@ -54,7 +55,8 @@ embeddings_map = {
     "<genre>":embeddings_genre,
     "<name>":embeddings_names,
     "<order>":embeddings_order,
-    "<predicate>": embeddings_predicates
+    "<predicate>": embeddings_predicates,
+    #"<associations_ratings" : embeddings_associations,
                 }
 
 node_dict_map = {
@@ -64,7 +66,8 @@ node_dict_map = {
     "<genre>":genre_dict,
     "<name>":name_dict,
     "<order>":order_dict,
-    "<predicate>" : predicates_dict
+    "<predicate>" : predicates_dict,
+    #"<associations_ratings>": association_dict
 }
 
 
@@ -142,11 +145,14 @@ def inference(input_chat_text):
     label = textcat_inference(ner_res["text"])
 
     print("LABEL: ",label)
+    #import pdb; pdb.set_trace()
     # TODO : Second check extra predicates
     detected_predicates = [k for k, v in ner_res["entities"].items() if v=='<predicate>']
     extra_predicates = [k for k, v in ner_preds["entities"].items() if v=='<predicate>']
     crowd_predicates = [k for k, v in ner_preds["entities"].items() if v!='<predicate>']
     crowd_predicates.extend([k for k, v in ner_res["entities"].items() if v=='<role>' or k=='genre'])
+    association_ratings = {k: '<predicate>' for k, v in ner_preds['entities'].items() if v=='<association rating>'}
+    ner_res['entities'].update(association_ratings)
     if len(extra_predicates)>0:
         detected_predicates.extend(extra_predicates)
     #import pdb;pdb.set_trace()
@@ -172,6 +178,10 @@ def inference(input_chat_text):
                     second_option = 3
                 else:
                     print('NER and textcat agreement')
+            elif len(association_ratings) >= 1:
+                second_option = 0
+                ner_res['entities'] = {k: v for k, v in ner_res['entities'].items() if not(k=='rating' and v=='<predicate>')}
+                print("updated ner_res: ", ner_res)
             elif pred in ['rated', 'rating', 'review', 'score']:
                 if label != "4" and label != "5" and label != "6" and label != "8": # Check that this is for the year questions
                     print("Mismatch between NER (label {}) and textcat (label {}). Analyze this".format(3, label))
@@ -216,7 +226,6 @@ def inference(input_chat_text):
         print(ner_res["text"],label,ner_res["entities"])    
         
         #Replace entities in the sparQL query with the detected entities
-
         for entity,ent_type in ner_res["entities"].items():
             node_dict = node_dict_map[ent_type]
             embedding_dict = embeddings_map[ent_type]
@@ -225,6 +234,7 @@ def inference(input_chat_text):
 
             if(ent_type == "<action>" or ent_type == "<role>" or ent_type == "<predicate>"):
                 ent_type = "<action/role>"
+
             s = s.replace(ent_type,matched_node)
             p = p.replace(ent_type,matched_node)
             o = o.replace(ent_type,matched_node)
@@ -256,7 +266,7 @@ def inference(input_chat_text):
                 print(ent_type,entity)
                 matched_node, score = match_entity(entity,node_dict, embedding_dict)
 
-                if(ent_type == "<action>" or ent_type == "<role>"):
+                if(ent_type == "<action>" or ent_type == "<role>" or ent_type == "<predicate>"):
                     ent_type = "<action/role>"
                 s = s.replace(ent_type,matched_node)
                 p = p.replace(ent_type,matched_node)

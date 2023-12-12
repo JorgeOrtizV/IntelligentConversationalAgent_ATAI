@@ -71,6 +71,11 @@ predicates_dict = {
     'rating': '<http://www.wikidata.org/prop/direct/P444>', 
     'review': '<http://www.wikidata.org/prop/direct/P444>', 
     'score': '<http://www.wikidata.org/prop/direct/P444>',
+    'JMK': '<http://www.wikidata.org/prop/direct/P3650>', 
+    'JMK film rating': '<http://www.wikidata.org/prop/direct/P3650>',
+    'MPA': '<http://www.wikidata.org/prop/direct/P1657>',
+    'ICAA': '<http://www.wikidata.org/prop/direct/P3306>',
+    'FSK': '<http://www.wikidata.org/prop/direct/P1981>',
     'suggest' : None,
     'recommend' : None,
     'Recommend' : None,
@@ -141,6 +146,14 @@ crowd_dict = {'publication date': 'http://www.wikidata.org/prop/direct/P577',
 }
 
 crowd_dict.update(roles_dict)
+
+association_dict = {
+    'JMK': 'http://www.wikidata.org/prop/direct/P3650', 
+    'JMK film rating': 'http://www.wikidata.org/prop/direct/P3650',
+    'MPA': 'http://www.wikidata.org/prop/direct/P1657',
+    'ICAA': 'http://www.wikidata.org/prop/direct/P3306',
+    'FSK': 'http://www.wikidata.org/prop/direct/P1981',
+}
 
 prefix_string = "PREFIX ddis: <http://ddis.ch/atai/> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX schema: <http://schema.org/> "
 
