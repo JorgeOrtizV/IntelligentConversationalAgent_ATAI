@@ -26,7 +26,7 @@ similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
 # embeddings_actions = similarity_model.encode(list(actions_dict.keys()), convert_to_tensor=True)
 # embeddings_roles = similarity_model.encode(list(roles_dict.keys()), convert_to_tensor=True)
 # embeddings_order = similarity_model.encode(list(order_dict.keys()), convert_to_tensor=True)
-embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
+# embeddings_predicates = similarity_model.encode(list(predicates_dict.keys()), convert_to_tensor=True)
 # embeddings_crowd = similarity_model.encode(list(crowd_dict.keys()), convert_to_tensor=True)
 # embeddings_associations = similarity_model.encode(list(association_dict.keys()), convert_to_tensor=True)
 with open('data/embeddings/embeddings_movies.pkl', 'rb') as f:
@@ -41,12 +41,14 @@ with open('data/embeddings/embeddings_roles.pkl', 'rb') as f:
     embeddings_roles = pickle.load(f)
 with open('data/embeddings/embeddings_order.pkl', 'rb') as f:
     embeddings_order = pickle.load(f)
-# with open('data/embeddings/embeddings_predicates.pkl', 'rb') as f:
-#     embeddings_predicates = pickle.load(f)
+with open('data/embeddings/embeddings_predicates.pkl', 'rb') as f:
+    embeddings_predicates = pickle.load(f)
 with open('data/embeddings/embeddings_crowd.pkl', 'rb') as f:
     embeddings_crowd = pickle.load(f)
-with open('data/embeddings/embeddings_associations.pkl', 'wb') as f:
-    pickle.dump(embeddings_predicates, f)
+# with open('data/embeddings/embeddings_associations.pkl', 'wb') as f:
+#     pickle.dump(embeddings_predicates, f)
+# with open('data/embeddings/embeddings_movies.pkl', 'wb') as f:
+#     pickle.dump(embeddings_movies, f)
 
 embeddings_map = {
     "<movie>":embeddings_movies,
