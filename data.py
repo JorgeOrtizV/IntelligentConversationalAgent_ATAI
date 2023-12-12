@@ -72,8 +72,73 @@ predicates_dict = {
     'review': '<http://www.wikidata.org/prop/direct/P444>', 
     'score': '<http://www.wikidata.org/prop/direct/P444>',
     'suggest' : None,
-    'recommend' : None
+    'recommend' : None,
+    'Recommend' : None,
+    "visual" : None,
+    "picture": None,
+    "image": None,
+    "photo": None
 }
+
+crowd_dict = {'publication date': 'http://www.wikidata.org/prop/direct/P577',
+    'release': 'http://www.wikidata.org/prop/direct/P577',
+    'when': 'http://www.wikidata.org/prop/direct/P577',
+    'date': 'http://www.wikidata.org/prop/direct/P577',
+    'year': 'http://www.wikidata.org/prop/direct/P577',
+    # 'is a': 'http://ddis.ch/atai/indirectSubclassOf',
+    # 'subclass': 'http://ddis.ch/atai/indirectSubclassOf',
+    # 'category': 'http://ddis.ch/atai/indirectSubclassOf',
+    'birthplace': 'http://www.wikidata.org/prop/direct/P495',
+    'country of origin': 'http://www.wikidata.org/prop/direct/P495',
+    'place of birth': 'http://www.wikidata.org/prop/direct/P495', 
+    'nationality': 'http://www.wikidata.org/prop/direct/P495', 
+    'main subject': 'http://www.wikidata.org/prop/direct/P921', 
+    'main character': 'http://www.wikidata.org/prop/direct/P921', 
+    'principal actor': 'http://www.wikidata.org/prop/direct/P921', 
+    'protagoinst': 'http://www.wikidata.org/prop/direct/P921', 
+    'lead character': 'http://www.wikidata.org/prop/direct/P921', 
+    'figure': 'http://www.wikidata.org/prop/direct/P921', 
+    'production designer': 'http://www.wikidata.org/prop/direct/P2554', 
+    'executive producer': 'http://www.wikidata.org/prop/direct/P1431', 
+    'JMK': 'http://www.wikidata.org/prop/direct/P3650', 
+    'JMK film rating': 'http://www.wikidata.org/prop/direct/P3650',
+    'MPA': 'http://www.wikidata.org/prop/direct/P1657',
+    'ICAA': 'http://www.wikidata.org/prop/direct/P3306',
+    'FSK': 'http://www.wikidata.org/prop/direct/P1981',
+    'original language': 'http://www.wikidata.org/prop/direct/P364',
+    'original language of': 'http://www.wikidata.org/prop/direct/P364',
+    'distributed by': 'http://www.wikidata.org/prop/direct/P750',
+    'box office': 'http://www.wikidata.org/prop/direct/P2142',
+    'allegiance': 'http://www.wikidata.org/prop/direct/P945',
+    'fidelity': 'http://www.wikidata.org/prop/direct/P945',
+    'loyalty': 'http://www.wikidata.org/prop/direct/P945',
+    'supporter of': 'http://www.wikidata.org/prop/direct/P945',
+    'ally of': 'http://www.wikidata.org/prop/direct/P945',
+    'loyal to': 'http://www.wikidata.org/prop/direct/P945',
+    'place of burial': 'http://www.wikidata.org/prop/direct/P119',
+    'buried': 'http://www.wikidata.org/prop/direct/P119',
+    'location': 'http://www.wikidata.org/prop/direct/P276',
+    'located': 'http://www.wikidata.org/prop/direct/P276',
+    'place of death': 'http://www.wikidata.org/prop/direct/P20',
+    'died': 'http://www.wikidata.org/prop/direct/P20',
+    'production company': 'http://www.wikidata.org/prop/direct/P272',
+    'company': 'http://www.wikidata.org/prop/direct/P272',
+    'produced': 'http://www.wikidata.org/prop/direct/P272',
+    'country of citizenship': 'http://www.wikidata.org/prop/direct/P27',
+    'citizen': 'http://www.wikidata.org/prop/direct/P27',
+    'citizenship': 'http://www.wikidata.org/prop/direct/P27',
+    'languages spoken': 'http://www.wikidata.org/prop/direct/P1412',
+    'languages written': 'http://www.wikidata.org/prop/direct/P1412',
+    'languages signed': 'http://www.wikidata.org/prop/direct/P1412',
+    'languages spoken written or signed': 'http://www.wikidata.org/prop/direct/P1412',
+    'speak': 'http://www.wikidata.org/prop/direct/P1412',
+    'spoken': 'http://www.wikidata.org/prop/direct/P1412',
+    'write': 'http://www.wikidata.org/prop/direct/P1412',
+    'written': 'http://www.wikidata.org/prop/direct/P1412',
+    'genre': '<http://www.wikidata.org/prop/direct/P136>',
+}
+
+crowd_dict.update(roles_dict)
 
 prefix_string = "PREFIX ddis: <http://ddis.ch/atai/> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX schema: <http://schema.org/> "
 
@@ -87,6 +152,7 @@ query_list = ['SELECT ?y WHERE { <movie> <action/role> ?x . ?x rdfs:label ?y}',
  'SELECT ?lbl  WHERE { <movie> wdt:P31 wd:Q11424 . ?movie wdt:P577 ?release_date ?movie rdfs:label ?lbl .FILTER regex(str(?release_date), "<year>") .}',
  'SELECT ?lbl WHERE { SELECT ?movie ?lbl ?rating WHERE { ?movie wdt:P31 wd:Q11424 . ?movie ddis:rating ?rating . ?movie <action> <name> . ?movie wdt:P136 <genre> . ?movie rdfs:label ?lbl . } ORDER BY <order>(?rating) LIMIT <number>}',
  #'ASK {<name> <action> <movie> . <movie> wdt:P577 ?release_date .<movie> wdt:P136 <genre> FILTER regex(str(?release_date), "<year>") . }'
+ 'SELECT ?x WHERE {<movie> wdt:P345 ?x .}', # Obtain IMBd ID
  ]
 
 query_spo = [
@@ -116,4 +182,8 @@ human_like_answers_embeddings = ["The answer according to my embeddings: <answer
                                  "Let me just check my embeddings, yup it's <answer>",                                 
                                  ]
 
-human_like_answers_recommendations = ["Here are some recommendations based on what you asked: "]
+human_like_answers_recommendations = ["Here are some recommendations based on what you asked: ",
+                                      "Hmm...how about these?: ",
+                                      "You could check these out: ",
+                                      "You'd probably like these : ",
+                                      ]
