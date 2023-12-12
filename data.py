@@ -77,7 +77,9 @@ predicates_dict = {
     "visual" : None,
     "picture": None,
     "image": None,
-    "photo": None
+    "photo": None,
+    "looks like": None,
+    "look like": None
 }
 
 crowd_dict = {'publication date': 'http://www.wikidata.org/prop/direct/P577',

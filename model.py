@@ -73,7 +73,7 @@ node_dict_map = {
 nlp_NER = spacy.load("./models/NER/v3_165/")
 nlp_NER.add_pipe("merge_entities")
 # NER for predicates
-nlp_NER2 = spacy.load("./models/NER2/loss_100/")
+nlp_NER2 = spacy.load("./models/NER2/v2_66/")
 nlp_NER2.add_pipe("merge_entities")
 
 nlp_textcat = spacy.load("./models/textcat_v3_13_99/")
@@ -154,7 +154,7 @@ def inference(input_chat_text):
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates or "Recommend" in detected_predicates:
         label = "10"
         print('label is now 10 - NER override')
-    elif 'image' in detected_predicates or 'picture' in detected_predicates or 'photo' in detected_predicates:
+    elif 'image' in detected_predicates or 'picture' in detected_predicates or 'photo' in detected_predicates or 'looks like' in detected_predicates or 'look like' in detected_predicates:
         label = "9"
         print('label is now 9 - NER override')
     # TODO: Analyze if it is safe to override label here. I am not sure, so let's stick with text cat as per now.
