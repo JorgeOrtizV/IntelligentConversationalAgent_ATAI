@@ -81,7 +81,7 @@ nlp_NER.add_pipe("merge_entities")
 nlp_NER2 = spacy.load("./models/NER2/v2_66/")
 nlp_NER2.add_pipe("merge_entities")
 
-nlp_textcat = spacy.load("./models/textcat_v3_13_99/")
+nlp_textcat = spacy.load("./models/textcat_v4_13_99/")
 
 
 #Function to match entity to entities in KG using fuzzy string similarity 
@@ -160,8 +160,8 @@ def inference(input_chat_text):
     #import pdb;pdb.set_trace()
     # texcat override based on NER
     if 'recommend' in detected_predicates or 'suggest' in detected_predicates or "Recommend" in detected_predicates:
-        label = "10"
-        print('label is now 10 - NER override')
+        label = "12"
+        print('label is now 12 - NER override')
     elif 'image' in detected_predicates or 'picture' in detected_predicates or 'photo' in detected_predicates or 'looks like' in detected_predicates or 'look like' in detected_predicates:
         label = "9"
         print('label is now 9 - NER override')
@@ -196,7 +196,7 @@ def inference(input_chat_text):
                 else:
                     print('NER and textcat agreement')
     # TODO: Naive way to check if recommendation, need to make it as last label
-    if(label=="10"):
+    if(label=="12"):
         print("Recommendation")
         query_type = "REC"
         ent_list = []
@@ -294,14 +294,7 @@ def search_crowd(s, p, crowd_predicates):
             if(row["Input2ID"].split(":")[-1] == p.split("/")[-1].replace(">","")):
                 print(row["Input1ID"].split(":")[-1],s,row["Input2ID"].split(":")[-1],p)
                 
-                answer = None
-                if(row["Answer_bool"]==False):
-                    if(row["Fix_value"]==None):
-                        answer = row["Input3ID"]
-                    else:
-                        answer = row["Fix_value"]
-                else:
-                    answer = row["Input3ID"]
+                answer = row["Input3ID"]
                 
                 if answer != None:
                     return{"query_type":"CROWD",
@@ -321,14 +314,7 @@ def search_crowd(s, p, crowd_predicates):
                     row["Input2ID"].split(":")[-1] == p.split("/")[-1].replace(">","")):
                     print(row["Input1ID"].split(":")[-1],s,row["Input2ID"].split(":")[-1],p)
                     
-                    answer = None
-                    if(row["Answer_bool"]==False):
-                        if(row["Fix_value"]==None):
-                            answer = row["Input3ID"]
-                        else:
-                            answer = row["Fix_value"]
-                    else:
-                        answer = row["Input3ID"]
+                    answer = row["Input3ID"]
                     
                     if answer != None:
                         return{"query_type":"CROWD",
