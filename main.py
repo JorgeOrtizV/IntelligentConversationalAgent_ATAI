@@ -162,8 +162,15 @@ class Agent:
                         f"\t- Chatroom {room.room_id} "
                         f"- new reaction #{reaction.message_ordinal}: '{reaction.type}' "
                         f"- {self.get_time()}")
+                    
+                    if(reaction.type == "STAR"):
+                        reaction_response = "Thanks for the star! Happy to help :)"
+                    if(reaction.type == "THUMBS_UP"):
+                        reaction_response = "Glad you liked my answer!"
+                    if(reaction.type == "THUMBS_DOWN"):
+                        reaction_response = "My bad. Will try to do better next time"
 
-                    room.post_messages(f"Received your reaction: '{reaction.type}' ")
+                    room.post_messages(reaction_response)
                     room.mark_as_processed(reaction)
 
             time.sleep(listen_freq)
